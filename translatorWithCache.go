@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/text/language"
 	"time"
@@ -12,7 +13,8 @@ import (
 const (
 	DEFAUL_CACHE_EXPIRARION = 5 * time.Minute
 	CACHE_PTGE_EXPIRED      = 10 * time.Minute
- )
+	EXPIRE_CACHE_DATA       = 1
+)
 
 type TranslatorWithCache struct {
 	translator *randomTranslator
@@ -39,12 +41,20 @@ func (t *TranslatorWithCache) Translate(ctx context.Context, from, to language.T
 	key := fmt.Sprintf("%s-%s", language.English, data)
 	cachedData, exist := t.cache.Get(key)
 	if !exist {
-		translatedData, err := t.translator.Translate(ctx, from, to, data)
-		if err == nil {
-			t.cache.Set(key, translatedData, cache.NoExpiration)
-			return translatedData, nil
+		retries := func() error {
+			translatedData, err := t.translator.Translate(ctx, from, to, data)
+			if err == nil {
+				t.cache.Set(key, translatedData, 0) // DefaultExpiration = 0, NoExpiration = 1
+				return nil
+			}
+			return err
 		}
-		return "", err
+		err := backoff.Retry(retries, backoff.NewExponentialBackOff())
+		if err != nil {
+			return "", err
+		}
+		translatedData, _ := t.cache.Get(key)
+		return translatedData.(string), nil
 	}
 	return fmt.Sprintf("%v", cachedData), nil
 }
