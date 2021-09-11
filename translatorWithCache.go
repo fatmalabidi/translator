@@ -17,8 +17,9 @@ const (
 )
 
 type TranslatorWithCache struct {
-	translator *randomTranslator
-	cache      *cache.Cache
+	translator       *randomTranslator
+	cache            *cache.Cache
+	expirationMethod time.Duration // defines when to purge the expired data in the cache
 }
 
 func NewTranslatorWithCache() *TranslatorWithCache {
@@ -27,10 +28,12 @@ func NewTranslatorWithCache() *TranslatorWithCache {
 		500*time.Millisecond,
 		0.1,
 	)
-	c := cache.New(DEFAUL_CACHE_EXPIRARION, CACHE_PTGE_EXPIRED)
+		c := cache.New(DEFAUL_CACHE_EXPIRARION, CACHE_PTGE_EXPIRED)
+
 	return &TranslatorWithCache{
-		translator: t,
-		cache:      c,
+		translator:       t,
+		cache:            c,
+		expirationMethod: time.Duration(EXPIRE_CACHE_DATA),
 	}
 }
 
@@ -44,7 +47,7 @@ func (t *TranslatorWithCache) Translate(ctx context.Context, from, to language.T
 		retries := func() error {
 			translatedData, err := t.translator.Translate(ctx, from, to, data)
 			if err == nil {
-				t.cache.Set(key, translatedData, 0) // DefaultExpiration = 0, NoExpiration = 1
+				t.cache.Set(key, translatedData, t.expirationMethod)
 				return nil
 			}
 			return err

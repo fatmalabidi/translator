@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build github.com/pailcamper/pc-offline-challenge" type="GoApplicationRunConfiguration" factoryName="Go Application" editBeforeRun="true" nameIsGenerated="true">
+    <working_directory value="$PROJECT_DIR$" />
+    <useCustomBuildTags value="true" />
+    <kind value="DIRECTORY" />
+    <package value="github.com/pailcamper/pc-offline-challenge" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
